@@ -1,0 +1,826 @@
+	EXPORT SUBWAY
+	IMPORT GPIO_INIT
+	IMPORT TFT_Init
+	IMPORT DrawRect
+	IMPORT Draw_Ball
+	IMPORT delay
+	IMPORT DIV
+	IMPORT COLOR_GREEN
+	IMPORT SCORE_INIT
+	IMPORT IncrementScore
+	IMPORT TFT_FillScreen
+	IMPORT Get_Random_Seed
+	IMPORT WIN
+	IMPORT LOSE
+	IMPORT SET_SCORE
+
+	AREA MYDATA, DATA, READWRITE
+PLAYER_CH DCD 1
+PLAYER_OLDCH DCD 0
+TRAINS_CH DCD 0, 1, 2
+TRAINS_X DCD 80, 100, 120
+COINS_CH DCD 0, 1, 2
+COINS_X DCD 110, 210, 310
+SPEED DCD 3
+
+;COLOURS
+BLACK EQU 0X0000
+BLUE EQU 0x001F
+WHITE EQU 0XFFFF
+PINK EQU 0xc814
+GREEN EQU 0x0780
+CYAN EQU 0x05b9
+RED	EQU 0xf800
+YELLOW	EQU 0xffc0
+ORANGE EQU	0xfc40
+BROWN EQU 0x89a0
+	
+;GAME DIMENSIONS
+PLAYER_X EQU 20
+TRAIN_L EQU 100
+TRAIN_W EQU 50
+
+;Define register base addresses
+RCC_BASE        EQU     0x40023800
+GPIOA_BASE      EQU     0x40020000
+GPIOB_BASE		EQU		0x40020400
+GPIOC_BASE		EQU		0x40020800
+GPIOD_BASE		EQU		0x40020C00
+GPIOE_BASE		EQU		0x40021000
+
+;Define register offsets
+RCC_AHB1ENR     EQU     0x30
+GPIO_MODER      EQU     0x00
+GPIO_OTYPER     EQU     0x04
+GPIO_OSPEEDR    EQU     0x08
+GPIO_PUPDR      EQU     0x0C
+GPIO_IDR        EQU     0x10
+GPIO_ODR        EQU     0x14
+
+;Control Pins on Port E
+TFT_RST         EQU     (1 << 8)
+TFT_RD          EQU     (1 << 10)
+TFT_WR          EQU     (1 << 11)
+TFT_DC          EQU     (1 << 12)
+TFT_CS          EQU     (1 << 15)
+
+DELAY_INTERVAL  EQU     0x0C204
+
+    AREA RESET, CODE, READONLY
+	
+SUBWAY
+	PUSH{R0-R12, LR}
+	;SETUP THE VARIABLES WITH INITIAL VALUES	
+	MOV R10, #BLACK
+	MOV R11, #420
+	MOV R12, #270
+	BL SCORE_INIT
+	BL SETUP_DATA
+	BL TFT_FillScreen
+	BL DRAW_NEW_PLAYER
+	BL DRAW_BORDERS
+	BL DRAW_TRAINS
+	BL DRAW_COINS
+;MAIN GAME LOOP
+GAMELOOP
+	BL COLOR_GREEN
+	BL UPDATE_PLAYER_STATE
+	BL DRAW_NEW_PLAYER
+	BL REDRAW_TRAIN
+	BL REDRAW_COINS
+	BL CHECK_COIN_COLLISION
+	BL CHECK_TRAIN_COLLISION
+	CMP R11, #1
+	BEQ GAMEOVER
+	BL delay
+	B GAMELOOP
+GAMEOVER
+	BL LOSE
+	B GAMEOVER
+	POP{R0-R12, PC}
+	
+DRAW_NEW_PLAYER
+	PUSH{R0-R12, LR}
+	
+	;PUT PLAYER CHANNEL IN R1
+	LDR R0, =PLAYER_CH
+	LDR R1, [R0]
+	;GET PLAYER STATE IN R2
+	LDR R0, =PLAYER_OLDCH
+	LDR R2, [R0]
+	
+	MOV R3, #105
+	MOV R11, #10 ;X1
+	
+	CMP R1, R2
+	BEQ DRAW_WHITE_PLAYER
+	;ERASE OLD PLAYER
+	MOV R10, #BLACK
+	MUL R12, R2, R3
+	ADD R12, R12, #35; Y1
+	BL DRAWSUBMAN
+	
+DRAW_WHITE_PLAYER
+	;DRAW NEW PLAYER
+	MOV R10, #WHITE
+	;GET Y1
+	MUL R12, R1, R3
+	ADD R12, R12, #35; Y1
+	
+	BL DRAWSUBMAN
+	
+	;DISABLE DRAWING BY SETTING OLD LOCATION WITH CURRENT LOCATION
+	LDR R0, =PLAYER_OLDCH
+	STR R1, [R0]
+	
+SKIP_DRAW_NEW_PLAYER
+	POP{R0-R12, PC}
+
+UPDATE_PLAYER_STATE
+    PUSH{R0-R12, LR}
+	
+	;GET INPUT IN R1
+	LDR R0, =GPIOB_BASE + GPIO_IDR
+	LDR R1, [R0]
+	
+	;GET CURRENT PLAYER LOCATION IN R2
+	LDR R0, =PLAYER_CH
+	LDR R2, [R0]
+	
+	;CHECK UP (PB14) ACTIVE LOW
+	TST R1, #(1<<14)
+	BNE SKIP_UP
+	CMP R2, #0
+	SUBGT R2, R2, #1
+	
+SKIP_UP
+	;CHECK DOWN (PB15) ACTIVE LOW
+	TST R1, #(1<<15)
+	BNE END_UPDATE_PLAYER
+	CMP R2, #2
+	ADDLT R2, R2, #1
+	
+END_UPDATE_PLAYER	
+	;UPDATE PLAYER CHANNEL BACK IN MEMORY
+	LDR R0, =PLAYER_CH
+	STR R2, [R0]
+	POP {R0-R12, PC}
+	
+REDRAW_TRAIN
+    PUSH{R0-R12, LR}
+	
+	;LOAD SPEED IN R3
+	LDR R0, =SPEED
+	LDR R3, [R0]
+	
+	LDR R0, =TRAINS_CH
+	LDR R1, =TRAINS_X
+	LDR R2, =0 ; OFFSET
+	
+DRAW_NEW_TRAIN
+	;CHECK IF THE TRAIN EXISTS IF NOT TRY TO GENERATE NEW TRAIN AND SKIP THIS TIME
+	MOV R11, #100
+GENERATETRAINLOOP
+	LDR R6, [R1, R2] ; R6->X1
+	CMP R6, #0xFFFFFFFF
+	BNE CONTINUE
+	BL GENERATE_NEW_TRAIN
+	SUB R11, R11, #1
+	CMP R11, #0
+	BGT GENERATETRAINLOOP
+	B SKIP_NEW_TRAIN_DRAW
+	
+CONTINUE
+	;REMOVE LAST PART OF THE TRAIN
+	MOV R10, #BLACK
+	ADD R8, R6, #TRAIN_L ; R8->X2
+	SUB R6, R8, R3 ; R6->X8-SPEED
+	
+	MOV R4, #105
+	LDR R7, [R0, R2] ; R7->CHANNEL
+	MUL R7, R7, R4
+	ADD R7, R7, #30  ;R7->Y1
+	ADD R9, R7, #TRAIN_W ;R9->Y2
+	BL DrawRect
+	
+	;DRAW NEW PART OF THE TRAIN
+	LDR R6, [R1, R2] ; R6->X1
+	SUB R6, R6, R3 ; R6->X1
+	;STORE BACK NEW TRAIN X POSITION
+	STR R6, [R1, R2]
+	;CHECK IF THE TRAIN HAS ENDED GENERATE NEW ONE
+	BL CHECK_NEW_TRAIN
+	BL DRAW_COLOURED_TRAIN
+SKIP_NEW_TRAIN_DRAW
+	ADD R2, R2, #4
+	CMP R2, #8
+	BLE DRAW_NEW_TRAIN
+	
+END_REDREAW_NEW_TRAIN
+	POP {R0-R12, PC}
+
+REDRAW_COINS
+	PUSH{R0-R12, LR}
+	
+	LDR R0, =SPEED
+	LDR R3, [R0]
+	
+	LDR R0, =COINS_CH
+	LDR R1, =COINS_X
+	
+	MOV R2, #0
+	MOV R4, #105
+	MOV R10, #BLACK
+DRAW_NEW_COIN
+	LDR R6, [R1, R2]
+	;CHECK IF THE COINS EXISTS IF NOT TRY TO GENERATE NEW ONE AND SKIP DRAWING THIS TIME
+	CMP R6, #0xFFFFFFFF
+	BEQ GO_GENERATE_NEW_COIN
+	
+	;ERASE LAST PART OF THE COIN
+	ADD R8, R6, #18
+	SUB R6, R8, R3
+	
+	LDR R7, [R0, R2]
+	MUL R7, R7, R4
+	ADD R7, R7, #40
+	ADD R9, R7, #22
+
+	BL DrawRect
+	
+	LDR R6, [R1, R2]
+	SUB R6, R6, R3
+	STR R6, [R1, R2]
+	
+	BL CHECK_END_COIN
+	BL DRAW_COIN
+
+SKIP_NEW_COIN_DRAW
+	ADD R2, R2, #4
+	CMP R2, #8
+	BLE DRAW_NEW_COIN
+	B END_REDREAW_NEW_TRAIN
+
+GO_GENERATE_NEW_COIN
+	BL GENERATE_NEW_COIN
+	B SKIP_NEW_COIN_DRAW
+	
+END_REDREAW_NEW_COIN
+	POP{R0-R12, PC}
+
+CHECK_TRAIN_COLLISION
+    PUSH{R0-R10, R12, LR}
+	
+	;PUT PLAYER CHANNEL IN R3
+	LDR R0, =PLAYER_CH
+	LDR R3, [R0]
+	
+	LDR R0, =TRAINS_CH
+	LDR R1, =TRAINS_X
+	LDR R2, =0 ;OFFSET
+CHECK_NEXT
+	; PUT TRAINS CHANNEL IN R4 / TRAINS X IN R5
+	LDR R4, [R0], #4
+	LDR R5, [R1], #4
+	CMP R4, R3
+	BNE SKIP_CHECK
+	CMP R5, #60
+	BHI SKIP_CHECK
+	MOV R11, #1
+	B END_COLLISION_CHECK
+SKIP_CHECK
+	ADD R2, R2, #1
+	CMP R2, #2
+	BLE CHECK_NEXT
+END_COLLISION_CHECK
+	POP {R0-R10, R12, PC}
+
+CHECK_NEW_TRAIN
+	PUSH{R0-R12, LR}
+	;R2 PASSED WITH THE OFFSET OF THE DELETED TRAIN
+	LDR R0, =TRAINS_X
+	LDR R1, [R0, R2]; PUT TRAIN'S X BEING CHECKED IN R1
+	CMP R1, #0
+	BGT END_NEW_CHECK
+	BL ERASE_TRAIN
+	MOV R5, #0xFFFFFFFF
+	STR R5, [R0, R2]
+END_NEW_CHECK
+	POP {R0-R12, PC}
+	
+GENERATE_NEW_TRAIN	
+	PUSH{R0-R12, LR}
+	
+	MOV R9, R2
+	BL Get_Random_Seed
+	MOV R1, #3
+	BL DIV
+	MOV R2, R9
+	MOV R5, R0
+	LDR R0, =COINS_CH
+	LDR R1, =COINS_X
+	MOV R6, #0 ; OFFSET
+LOOPCOINS
+	LDR R7, [R0, R6] ; R7->CHANNEL
+	LDR R8, [R1, R6] ; R8->X
+	CMP R7, R5
+	BNE ENDLOOPCOINS
+	CMP R8, #340
+	BGT END_NEW_GENERATE
+ENDLOOPCOINS
+	ADD R6, R6, #4
+	CMP R6, #8
+	BLE LOOPCOINS
+	
+	LDR R0, =TRAINS_CH
+	LDR R1, =TRAINS_X
+	MOV R6, #0
+	; R5->RANDOM(0, 1, 2), R0+R1->BASE OFFSET, R2->TRAIN OFFSET, R3->CHECK OFFSET
+LOOPTRAINS
+	LDR R7, [R0, R6] ; R7-> CHANNEL
+	LDR R8, [R1, R6] ; R8-> X
+	CMP R7, R5
+	BNE ENDLOOPTRAINS
+	CMP R8, #250
+	BGT END_NEW_GENERATE
+ENDLOOPTRAINS
+	ADD R6, R6, #4
+	CMP R6, #8
+	BLE LOOPTRAINS
+
+	;UPDATE NEW TRAIN IN OFFSET OF R2 AT X = 370 AND CHANNEL IN R5
+	STR R5, [R0, R2]
+	MOV R8, #370
+	STR R8, [R1, R2]
+END_NEW_GENERATE
+	POP{R0-R12, PC}
+
+
+ERASE_TRAIN
+	PUSH{R0-R12, LR}
+	LDR R0, =TRAINS_CH
+	LDR R1, =TRAINS_X
+	
+	MOV R10, #BLACK
+	MOV R3, #105
+	
+	LDR R6, [R1, R2]
+	ADD R8, R6, #TRAIN_L
+	
+	LDR R7, [R0, R2]
+	MUL R7, R7, R3
+	ADD R7, R7, #30
+	ADD R9, R7, #TRAIN_W
+	
+	BL DrawRect
+	POP{R0-R12, PC}
+	
+ERASE_COIN
+	PUSH{R0-R12, LR}
+	LDR R0, =COINS_CH
+	LDR R1, =COINS_X
+	
+	MOV R10, #BLACK
+	MOV R4, #105
+	
+	LDR R6, [R1, R2]
+	ADD R8, R6, #18
+	
+	LDR R7, [R0, R2]
+	MUL R7, R7, R4
+	ADD R7, R7, #40
+	ADD R9, R7, #22
+
+	BL DrawRect
+	
+	POP{R0-R12, PC}
+
+CHECK_END_COIN
+	PUSH{R0-R12, LR}
+	LDR R1, =COINS_X
+	LDR R3, [R1, R2] ; R3->COIN'S X
+	CMP R3, #0
+	BGT SKIP_CHECK_COIN
+	MOV R3, #0xFFFFFFFF
+	STR R3, [R1, R2]
+	BL ERASE_COIN
+SKIP_CHECK_COIN
+	POP{R0-R12, PC}
+
+GENERATE_NEW_COIN
+	PUSH{R0-R12, LR}
+	MOV R9, R2
+	BL Get_Random_Seed
+	MOV R1, #3
+	BL DIV
+	MOV R2, R9
+	MOV R5, R0 ; R5-> RANDOM CHANNEL , R2 OFFSET OF THE COIN BEING GENERATED
+	
+	LDR R0, =TRAINS_CH
+	LDR R1, =TRAINS_X
+	MOV R6, #0 ; OFFSET
+CHECK_TRAINS_OVERLAP
+	LDR R7, [R0, R6]; R7->CHANNEL
+	LDR R8, [R1, R6]; R8->X
+	CMP R7, R5
+	BNE CHECK_NEXT_TRAIN_OVERLAP
+	CMP R8, #340
+	BGT SKIP_GENERATE_COIN
+CHECK_NEXT_TRAIN_OVERLAP
+	ADD R6, R6, #4
+	CMP R6, #8
+	BLE CHECK_TRAINS_OVERLAP
+	
+	LDR R0, =COINS_CH
+	LDR R1, =COINS_X
+	MOV R6, #0 ; OFFSET
+CHECK_COINS_OVERLAP
+	LDR R7, [R0, R6] ; R7->CHANNEL
+	LDR R8, [R1, R6] ; R8->X
+	CMP R7, R5
+	BNE CHECK_NEXT_COIN_OVERLAP
+	CMP R8, #420
+	BGT SKIP_GENERATE_COIN
+CHECK_NEXT_COIN_OVERLAP
+	ADD R6, R6, #4
+	CMP R6, #8
+	BLE CHECK_COINS_OVERLAP
+	
+	STR R5, [R0, R2]
+	MOV R5, #460
+	STR R5, [R1, R2]
+	
+SKIP_GENERATE_COIN
+	POP{R0-R12, PC}
+	
+CHECK_COIN_COLLISION
+	PUSH{R0-R12, LR}
+	
+	LDR R0, =PLAYER_CH
+	LDR R3, [R0]
+	;R3->PLAYER CHANNEL
+	LDR R0, =COINS_CH
+	LDR R1, =COINS_X
+	MOV R2, #0 ; OFFSET
+COINS_LOOP_COLLISION
+	LDR R4, [R0, R2]; COINS CHANNEL
+	LDR R5, [R1, R2]; COINS X
+	CMP R4, R3
+	BNE CHECK_NEXT_COIN_COLLISION
+	CMP R5, #60
+	BHI CHECK_NEXT_COIN_COLLISION
+	BL ERASE_COIN
+	MOV R6, #0xFFFFFFFF
+	STR R6, [R1, R2]
+	BL IncrementScore
+CHECK_NEXT_COIN_COLLISION
+	ADD R2, R2, #4
+	CMP R2, #8
+	BLE COINS_LOOP_COLLISION
+	POP{R0-R12, PC}
+	
+	B SKIP_THIS_FOOL_LINE1
+	LTORG
+SKIP_THIS_FOOL_LINE1
+
+;===============================
+;;;;;;;;;;;;DRAWINGS;;;;;;;;;;;;
+;===============================
+; R11 = Start X position
+; R12 = Start Y position
+; Draws your exact coin/arrow design at specified location
+COIN
+    PUSH {R0-R12, LR}
+    
+    ; Base position
+    MOV R2, R11         ; Start X
+    MOV R3, R12         ; Start Y
+    LDR R10, =YELLOW
+    
+    ; Leftmost vertical part (maintains your exact design)
+    MOV R6, R2          ; X1 = start X
+    ADD R7, R3, #4     ; Y1 = start Y + 2
+    ADD R8, R2, #2     ; X2 = X1 + 4
+    ADD R9, R3, #18     ; Y2 = Y1 + 16
+    BL DrawRect
+    
+    ; Vertical connector (your design)
+    ADD R6, R2, #2      ; X1 = start X + 2
+    ADD R7, R3, #2     ; Y1 = start Y + 4
+    ADD R8, R6  ,#4        ; X2 = X1 (1 pixel wide)
+    ADD R9, R3, #20     ; Y2 = Y1 + 16
+    BL DrawRect
+    
+    ; Diagonal part (your design)
+    ADD R6, R2, #4      ; X1 = start X + 4
+    MOV R7, R3          ; Y1 = start Y
+    ADD R8, R2, #14     ; X2 = X1 + 10
+    ADD R9, R3, #22     ; Y2 = Y1 + 22
+    BL DrawRect
+    
+    ; Right wing parts (your design)
+    ADD R6, R2, #14     ; X1 = start X + 14
+    ADD R7, R3, #2    ; Y1 = start Y + 16
+    ADD R8, R2, #16     ; X2 = X1 + 2
+    ADD R9, R3, #20     ; Y2 = Y1 + 4
+    BL DrawRect
+    
+	ADD R6, R2, #16     ; X1 = start X + 14
+    ADD R7, R3, #4   ; Y1 = start Y + 16
+    ADD R8, R2, #18     ; X2 = X1 + 2
+    ADD R9, R3, #18     ; Y2 = Y1 + 4
+    BL DrawRect
+    LDR R10, =ORANGE    ; Switch to orange
+    
+    ; Arrowhead parts (your exact design)
+    ADD R6, R2, #8      ; X1 = start X + 8
+    ADD R7, R3, #2      ; Y1 = start Y + 2
+    ADD R8, R2, #10     ; X2 = X1 + 2
+    ADD R9, R3, #20     ; Y2 = Y1 + 18
+    BL DrawRect
+    
+    ; Additional orange parts (your exact design)
+    ADD R6, R2, #6      ; X1 = start X + 6
+    ADD R7, R3, #4      ; Y1 = start Y + 4
+    ADD R8, R2, #12     ; X2 = X1 + 6
+    ADD R9, R3, #6      ; Y2 = Y1 + 2
+    BL DrawRect
+    
+    ; More orange parts...
+    ADD R6, R2, #4      ; X1 = start X + 4
+    ADD R7, R3, #6      ; Y1 = start Y + 6
+    ADD R8, R2, #6      ; X2 = X1 + 2
+    ADD R9, R3, #10     ; Y2 = Y1 + 4
+    BL DrawRect
+    
+	 ; More orange parts...
+    ADD R6, R2, #6      ; X1 = start X + 4
+    ADD R7, R3, #10      ; Y1 = start Y + 6
+    ADD R8, R2, #12      ; X2 = X1 + 2
+    ADD R9, R3, #12   ; Y2 = Y1 + 4
+    BL DrawRect
+	
+	 ; More orange parts...
+    ADD R6, R2, #12      ; X1 = start X + 4
+    ADD R7, R3, #12      ; Y1 = start Y + 6
+    ADD R8, R2, #14     ; X2 = X1 + 2
+    ADD R9, R3, #16     ; Y2 = Y1 + 4
+    BL DrawRect
+	
+	 ; More orange parts...
+    ADD R6, R2, #6     ; X1 = start X + 4
+    ADD R7, R3, #16    ; Y1 = start Y + 6
+    ADD R8, R2, #12      ; X2 = X1 + 2
+    ADD R9, R3, #18     ; Y2 = Y1 + 4
+    BL DrawRect
+	
+	 ; More orange parts...
+    ADD R6, R2, #4      ; X1 = start X + 4
+    ADD R7, R3, #14      ; Y1 = start Y + 6
+    ADD R8, R2, #6      ; X2 = X1 + 2
+    ADD R9, R3, #16     ; Y2 = Y1 + 4
+    BL DrawRect
+	
+    POP {R0-R12, PC}
+
+;TAKES COLOUR IN R10
+;START X IN R11
+;START Y IN R12
+DRAWSUBMAN
+	PUSH{R0-R12,LR}
+	    
+    ; Base position
+    MOV R2, R11         ; Start X
+    MOV R3, R12         ; Start Y
+	
+	;DRAW BASE OF ARROW
+    MOV R6, R2 
+    MOV R7, R3 
+    ADD R8, R2, #6
+    ADD R9, R3, #6
+    BL DrawRect
+	
+	MOV R6, R2 
+    ADD R7, R3 , #24
+    ADD R8, R2, #6
+    ADD R9, R3, #30
+    BL DrawRect
+	
+	ADD R6, R2,#6 
+    ADD R7, R3,#2 
+    ADD R8, R2, #12
+    ADD R9, R3, #12
+    BL DrawRect
+	
+	ADD R6, R2,#6 
+    ADD R7, R3,#20 
+    ADD R8, R2, #12
+    ADD R9, R3, #28
+    BL DrawRect
+	
+	ADD R6, R2,#12 
+    ADD R7, R3,#4 
+    ADD R8, R2, #18
+    ADD R9, R3, #14
+    BL DrawRect
+	
+	ADD R6, R2,#12 
+    ADD R7, R3,#18 
+    ADD R8, R2, #18
+    ADD R9, R3, #26
+    BL DrawRect
+	
+	ADD R6, R2,#18 
+    ADD R7, R3,#6
+    ADD R8, R2, #24
+    ADD R9, R3, #24
+    BL DrawRect
+	
+	ADD R6, R2,#24 
+    ADD R7, R3,#8
+    ADD R8, R2, #30
+    ADD R9, R3, #22
+    BL DrawRect
+	
+	ADD R6, R2,#30
+    ADD R7, R3,#10
+    ADD R8, R2, #36
+    ADD R9, R3, #20
+    BL DrawRect
+	
+	ADD R6, R2,#36 
+    ADD R7, R3,#12
+    ADD R8, R2, #42
+    ADD R9, R3, #18
+    BL DrawRect
+	
+	ADD R6, R2,#42 
+    ADD R7, R3,#14
+    ADD R8, R2, #48
+    ADD R9, R3, #16
+    BL DrawRect
+	POP {R0-R12, PC}
+
+COLOURED_TRAIN
+    PUSH{R0-R12,LR}
+
+    MOV R11,R6
+    ADD R8,R6,#10
+
+    ADD R9, R7, #TRAIN_W ;R9->Y2
+    MOV R10,#YELLOW
+    BL DrawRect
+
+    MOV R6, R8
+    ADD R8,R6,#35
+    MOV R10,#BLUE 
+    BL DrawRect
+
+    MOV R6, R8
+    ADD R8,R6,#55
+    MOV R10,#YELLOW
+    BL DrawRect
+
+    MOV R6,R11
+    ADD R6,R6,#20
+    ADD R8,R6,#15
+    ADD R7,R7,#10
+    ADD R9, R7,#13
+
+    MOV R10,#WHITE
+    BL DrawRect
+	
+    ADD R7,R9,#4
+    ADD R9, R7,#13
+
+    MOV R10,#WHITE
+    BL DrawRect
+
+    POP{R0-R12,PC}
+	
+DRAW_COLOURED_TRAIN
+    PUSH{R0-R12,LR}
+	LDR R0, =TRAINS_CH
+	LDR R1, =TRAINS_X
+	
+	MOV R3, #105
+	LDR R6, [R1, R2]
+	CMP R6, #0xFFFFFFFF
+	BEQ SKIP_DRAW_TRAIN
+	LDR R7, [R0, R2]
+	MUL R7, R7, R3
+	ADD R7, R7, #30
+	BL COLOURED_TRAIN
+
+SKIP_DRAW_TRAIN
+    POP{R0-R12,PC}
+
+DRAW_TRAINS
+    PUSH{R0-R12, LR}
+    MOV R2, #0
+DRAW_GOOD_TRAIN
+	BL DRAW_COLOURED_TRAIN
+	ADD R2, R2, #4
+	CMP R2, #8
+    BLE DRAW_GOOD_TRAIN
+
+    POP{R0-R12, PC}
+
+DRAW_COIN
+	PUSH{R0-R12, LR}
+	LDR R0, =COINS_CH
+	LDR R1, =COINS_X
+
+	MOV R3, #105
+    LDR R11, [R1, R2]
+	CMP R11, #0xFFFFFFFF
+	BEQ SKIP_DRAW_COIN
+	LDR R12, [R0, R2]
+	MUL R12, R12, R3
+	ADD R12, R12, #40
+	BL COIN
+SKIP_DRAW_COIN
+	POP{R0-R12, PC}
+
+DRAW_COINS
+	PUSH{R0-R12, LR}
+	MOV R2, #0
+DRAW_GOOD_COINS
+	BL DRAW_COIN
+    ADD R2, R2, #4
+    CMP R2, #8
+    BLE DRAW_GOOD_COINS
+	
+	POP{R0-R12, PC}
+
+DRAW_BORDERS
+	PUSH{R0-R12, LR}
+	
+	MOV R10, #BROWN
+	MOV R6, #0
+	MOV R7, #0
+	MOV R8, #480
+	MOV R9, #5
+	BL DrawRect
+	
+	MOV R6, #0
+	MOV R7, #105
+	MOV R8, #480
+	MOV R9, #110
+	BL DrawRect
+	
+	MOV R6, #0
+	MOV R7, #210
+	MOV R8, #480
+	MOV R9, #215
+	BL DrawRect
+	
+	MOV R6, #0
+	MOV R7, #315
+	MOV R8, #480
+	MOV R9, #320
+	BL DrawRect
+	
+	POP{R0-R12, PC}
+;=========================
+;===Memory Initialization
+;=========================
+SETUP_DATA
+	PUSH{R0-R12, LR}
+	LDR R0, =PLAYER_CH
+	LDR R1, =1
+	STR R1, [R0]
+	
+	LDR R0, =PLAYER_OLDCH
+	LDR R1, =0
+	STR R1, [R0]
+	
+	LDR R0, =SPEED
+	LDR R1, =10
+	STR R1, [R0]
+	
+	LDR R0, =TRAINS_CH
+	LDR R1, =TRAINS_X
+	MOV R2, #0
+	MOV R3, #80
+SETUPTRAINS
+	STR R2, [R0], #4
+	STR R3, [R1], #4
+	ADD R3, R3, #100
+	ADD R2, R2, #1
+	CMP R2, #2
+	BLE SETUPTRAINS
+	
+	LDR R0, =COINS_CH
+	LDR R1, =COINS_X
+	MOV R2, #0
+	MOV R3, #200
+SETUPCOINS
+	STR R2, [R0], #4
+	STR R3, [R1], #4
+	ADD R3, R3, #100
+	ADD R2, R2, #1
+	CMP R2, #2
+	BLE SETUPCOINS
+	
+	POP{R0-R12, PC}

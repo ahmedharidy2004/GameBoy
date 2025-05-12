@@ -1,0 +1,22 @@
+--cpu=Cortex-M4.fp.sp
+".\objects\main.o"
+".\objects\configuration.o"
+".\objects\score.o"
+".\objects\screens.o"
+".\objects\firedortired.o"
+".\objects\bowling.o"
+".\objects\brickbreaker.o"
+".\objects\flappybird.o"
+".\objects\fruitninja.o"
+".\objects\hockey.o"
+".\objects\snake.o"
+".\objects\subway.o"
+".\objects\undertale.o"
+".\objects\image1.o"
+".\objects\image2.o"
+".\objects\retarget_io.o"
+".\objects\startup_stm32f401xc.o"
+".\objects\system_stm32f4xx.o"
+--ro-base 0x08000000 --entry 0x08000000 --rw-base 0x20000000 --entry Reset_Handler --first __Vectors --strict --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\Listings\BrickBreaker.map" -o .\Objects\BrickBreaker.axf
