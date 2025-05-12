@@ -3,7 +3,7 @@
 <title>Static Call Graph - [.\Objects\BrickBreaker.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Objects\BrickBreaker.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6230001: Last Updated: Mon May 12 05:35:07 2025
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6230001: Last Updated: Mon May 12 09:03:05 2025
 <BR><P>
 <H3>Maximum Stack Usage =          0 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -15,10 +15,10 @@ Functions with no stack information
  <LI><a href="#[45]">__user_initial_stackheap</a>
  <LI><a href="#[62]">Get_Random_Seed</a>
  <LI><a href="#[61]">GPIO_INIT</a>
- <LI><a href="#[71]">GPIOX_ONEREAD</a>
- <LI><a href="#[72]">GPIOX_READ</a>
- <LI><a href="#[73]">GPIOX_SETHIGH</a>
- <LI><a href="#[74]">GPIOX_SETLOW</a>
+ <LI><a href="#[70]">GPIOX_ONEREAD</a>
+ <LI><a href="#[71]">GPIOX_READ</a>
+ <LI><a href="#[72]">GPIOX_SETHIGH</a>
+ <LI><a href="#[73]">GPIOX_SETLOW</a>
  <LI><a href="#[46]">TFT_Init</a>
  <LI><a href="#[48]">TFT_WriteCommand</a>
  <LI><a href="#[49]">TFT_WriteData</a>
@@ -38,7 +38,7 @@ Functions with no stack information
  <LI><a href="#[56]">COLOR_GREEN</a>
  <LI><a href="#[57]">COLOR_WHITE</a>
  <LI><a href="#[58]">COLOR_BLACK</a>
- <LI><a href="#[6d]">SET_SCORE</a>
+ <LI><a href="#[74]">SET_SCORE</a>
  <LI><a href="#[64]">SCORE_INIT</a>
  <LI><a href="#[59]">CLEAR_COLOR</a>
  <LI><a href="#[5a]">IncrementScore</a>
@@ -391,11 +391,11 @@ Global Symbols
 </UL>
 <P><STRONG><a name="[45]"></a>__user_initial_stackheap</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, startup_stm32f401xc.o(.text), UNUSED, KEPT)
 
-<P><STRONG><a name="[6e]"></a>__use_two_region_memory</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, heapauxi.o(.text), UNUSED)
+<P><STRONG><a name="[6d]"></a>__use_two_region_memory</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, heapauxi.o(.text), UNUSED)
 
-<P><STRONG><a name="[6f]"></a>__rt_heap_escrow$2region</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, heapauxi.o(.text), UNUSED)
+<P><STRONG><a name="[6e]"></a>__rt_heap_escrow$2region</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, heapauxi.o(.text), UNUSED)
 
-<P><STRONG><a name="[70]"></a>__rt_heap_expand$2region</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, heapauxi.o(.text), UNUSED)
+<P><STRONG><a name="[6f]"></a>__rt_heap_expand$2region</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, heapauxi.o(.text), UNUSED)
 
 <P><STRONG><a name="[42]"></a>SystemInit</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, system_stm32f4xx.o(.text.SystemInit))
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f401xc.o(.text)
@@ -405,6 +405,7 @@ Global Symbols
 <LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UNDERTALE
 <LI><a href="#[6a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SUBWAY
 <LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FRUITNINJA
+<LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FIREDORTIRED
 </UL>
 
 <P><STRONG><a name="[61]"></a>GPIO_INIT</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, configuration.o(MYCODE))
@@ -412,13 +413,13 @@ Global Symbols
 <LI><a href="#[43]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__main
 </UL>
 
-<P><STRONG><a name="[71]"></a>GPIOX_ONEREAD</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, configuration.o(MYCODE), UNUSED)
+<P><STRONG><a name="[70]"></a>GPIOX_ONEREAD</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, configuration.o(MYCODE), UNUSED)
 
-<P><STRONG><a name="[72]"></a>GPIOX_READ</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, configuration.o(MYCODE), UNUSED)
+<P><STRONG><a name="[71]"></a>GPIOX_READ</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, configuration.o(MYCODE), UNUSED)
 
-<P><STRONG><a name="[73]"></a>GPIOX_SETHIGH</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, configuration.o(MYCODE), UNUSED)
+<P><STRONG><a name="[72]"></a>GPIOX_SETHIGH</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, configuration.o(MYCODE), UNUSED)
 
-<P><STRONG><a name="[74]"></a>GPIOX_SETLOW</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, configuration.o(MYCODE), UNUSED)
+<P><STRONG><a name="[73]"></a>GPIOX_SETLOW</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, configuration.o(MYCODE), UNUSED)
 
 <P><STRONG><a name="[46]"></a>TFT_Init</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, configuration.o(MYCODE))
 <BR><BR>[Calls]<UL><LI><a href="#[47]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;delay
@@ -512,6 +513,7 @@ Global Symbols
 <LI><a href="#[6a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SUBWAY
 <LI><a href="#[6b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HOCKEY
 <LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FRUITNINJA
+<LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FIREDORTIRED
 <LI><a href="#[68]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;BRICKBREAKER
 </UL>
 
@@ -527,10 +529,8 @@ Global Symbols
 <BR><BR>[Calls]<UL><LI><a href="#[50]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DrawScoreDIGIT
 </UL>
 
-<P><STRONG><a name="[53]"></a>COLOR_RED</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, score.o(MYCODE))
+<P><STRONG><a name="[53]"></a>COLOR_RED</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, score.o(MYCODE), UNUSED)
 <BR><BR>[Calls]<UL><LI><a href="#[50]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DrawScoreDIGIT
-</UL>
-<BR>[Called By]<UL><LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FIREDORTIRED
 </UL>
 
 <P><STRONG><a name="[54]"></a>COLOR_YELLOW</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, score.o(MYCODE), UNUSED)
@@ -545,7 +545,6 @@ Global Symbols
 <BR><BR>[Calls]<UL><LI><a href="#[50]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DrawScoreDIGIT
 </UL>
 <BR>[Called By]<UL><LI><a href="#[6a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SUBWAY
-<LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FIREDORTIRED
 </UL>
 
 <P><STRONG><a name="[57]"></a>COLOR_WHITE</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, score.o(MYCODE))
@@ -561,23 +560,19 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[67]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FLAPPYBIRD
 </UL>
 
-<P><STRONG><a name="[6d]"></a>SET_SCORE</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, score.o(MYCODE))
-<BR><BR>[Called By]<UL><LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FIREDORTIRED
-</UL>
+<P><STRONG><a name="[74]"></a>SET_SCORE</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, score.o(MYCODE), UNUSED)
 
 <P><STRONG><a name="[64]"></a>SCORE_INIT</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, score.o(MYCODE))
 <BR><BR>[Called By]<UL><LI><a href="#[65]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;UNDERTALE
 <LI><a href="#[6a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SUBWAY
 <LI><a href="#[60]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FRUITNINJA
 <LI><a href="#[67]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FLAPPYBIRD
-<LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FIREDORTIRED
 </UL>
 
 <P><STRONG><a name="[59]"></a>CLEAR_COLOR</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, score.o(MYCODE))
 <BR><BR>[Calls]<UL><LI><a href="#[4b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DrawRect
 </UL>
 <BR>[Called By]<UL><LI><a href="#[5a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;IncrementScore
-<LI><a href="#[69]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;FIREDORTIRED
 </UL>
 
 <P><STRONG><a name="[5a]"></a>IncrementScore</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, score.o(MYCODE))
@@ -697,14 +692,11 @@ Global Symbols
 <P><STRONG><a name="[69]"></a>FIREDORTIRED</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, firedortired.o(RESET))
 <BR><BR>[Calls]<UL><LI><a href="#[5e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TWOWIN
 <LI><a href="#[5d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ONEWIN
-<LI><a href="#[59]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;CLEAR_COLOR
-<LI><a href="#[6d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SET_SCORE
-<LI><a href="#[53]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;COLOR_RED
+<LI><a href="#[63]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DIV
 <LI><a href="#[4d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TFT_DrawImage
+<LI><a href="#[62]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;Get_Random_Seed
 <LI><a href="#[4a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TFT_FillScreen
-<LI><a href="#[64]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;SCORE_INIT
 <LI><a href="#[4b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;DrawRect
-<LI><a href="#[56]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;COLOR_GREEN
 </UL>
 <BR>[Called By]<UL><LI><a href="#[43]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__main
 </UL>
