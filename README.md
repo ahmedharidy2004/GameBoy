@@ -66,3 +66,16 @@ This project demonstrates advanced **bare-metal programming**, low-level I/O han
 3. Build the project using the Keil ARM Compiler.
 4. Flash the firmware onto the board.
 5. Play the games using physical push buttons!
+
+## Contributers
+
+1. Mazen Mohsen
+2. Mazen Ahmed
+3. Ahmed Mohamed Abozeid
+4. Nancy Ashraf
+5. Maryam Refaat
+6. Mohamed Elsayed
+7. Mohamed Ashraf
+8. Mohamed Amir
+9. Ahmed Mahmoud Haridy
+
